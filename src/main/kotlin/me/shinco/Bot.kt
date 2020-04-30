@@ -1,5 +1,6 @@
 package me.shinco
 
+import me.shinco.commands.Registry
 import me.shinco.managers.EventManager
 import net.dv8tion.jda.core.AccountType
 import net.dv8tion.jda.core.JDABuilder
@@ -9,9 +10,10 @@ import kotlin.system.exitProcess
 fun main(args: Array<String>) {
     // Discord Bot Token
     // token : args[0]
-    val token = args[0]
+    val token = args[0]             // Bot Token 얻기
 
-    connect(token)
+    Registry().loadCommands()       // 명령어 활성화
+    connect(token)                  // 봇 연결
 }
 
 private fun connect(token: String) {
@@ -19,9 +21,11 @@ private fun connect(token: String) {
     // Java Discord API와 결합
     try {
         JDABuilder(AccountType.BOT)
-                .addEventListener(EventManager()) // EventListener를 추가
                 .setToken(token)                  // Bot의 Token 지정
-                .buildBlocking()
+                .setAudioEnabled(true)
+                .addEventListener(EventManager()) // EventListener를 추가
+                .setBulkDeleteSplittingEnabled(true)
+                .build()
     } catch (e: LoginException) {
         System.err.println(e.message)
         exitProcess(ExitStatus.INVALID_TOKEN.code)

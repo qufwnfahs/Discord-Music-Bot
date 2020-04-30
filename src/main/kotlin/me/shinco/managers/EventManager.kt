@@ -1,13 +1,26 @@
 package me.shinco.managers
 
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager
+import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager
+import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack
+import me.shinco.commands.Registry
+import net.dv8tion.jda.core.audio.hooks.ConnectionListener
+import net.dv8tion.jda.core.audio.hooks.ConnectionStatus
+import net.dv8tion.jda.core.entities.ChannelType
+import net.dv8tion.jda.core.entities.User
+import net.dv8tion.jda.core.events.DisconnectEvent
 import net.dv8tion.jda.core.events.ReadyEvent
+import net.dv8tion.jda.core.events.ReconnectedEvent
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent
+import net.dv8tion.jda.core.exceptions.PermissionException
 import net.dv8tion.jda.core.hooks.ListenerAdapter
 
+
 /* todo: EventManager 구현
-         입장 시 일정 duration으로 connect, disconnect Bug Fix 필요
  */
 class EventManager : ListenerAdapter() {
+    /* Bot 실행 후 EventManager가 처음 준비완료 됬을 때 Call */
     override fun onReady(event: ReadyEvent) {
         val selfUser = event.jda.selfUser
         println("Account Info: ${selfUser.name}#${selfUser.discriminator} (ID: ${selfUser.id})\n" +
@@ -15,40 +28,24 @@ class EventManager : ListenerAdapter() {
     }
 
     override fun onMessageReceived(event: MessageReceivedEvent) {
-        val content = event.message.rawContent  // 메세지 Raw 내용
-        val selfId = event.jda.selfUser.id      // bot Id
-
+        val content = event.message.contentRaw  // 메세지 Raw 내용
         val author = event.author.name          // 메세지 작성자 (author)
-        val channel = event.channel
 
-        println("Content : $content, selfId : $selfId, author name : $author")
+        val prefix = "!"                        // 명령어 prefix : !
 
-        if (content == "!입장") {
-            val connectedChannel = event.member.voiceState.channel
+        println("Content : $content, author name : $author")
 
-            if (connectedChannel == null) {
-                channel.sendMessage("당신은 현재 음성 채널에 연결되어 있지 않습니다!")
-                return
-            }
-
-            val audioManager = event.guild.audioManager
-            if (audioManager.isAttemptingToConnect) {
-                channel.sendMessage("봇이 현재 연결하려는 중입니다. 음성 채널에 들어가 계세요.").queue()
-                return
-            }
-
-            audioManager.openAudioConnection(connectedChannel)
-            channel.sendMessage("봇이 연결되었습니다!").queue()
+        if (event.isFromType(ChannelType.PRIVATE)) {
+            println("PRIVATE MESSAGE IS TEMPORARY DENIED")
+            return
         }
-        else if (content == "!퇴장") {
-            val connectedChannel = event.guild.selfMember.voiceState.channel
-            if (connectedChannel == null) {
-                channel.sendMessage("이미 연결되어 있지 않습니다!").queue()
-                return
-            }
 
-            event.guild.audioManager.closeAudioConnection()
-            channel.sendMessage("봇의 연결이 끊어졌습니다!").queue()
-        }
+        val index = prefix.length
+        val allArgs = content.substring(index).split("\\s+".toRegex())  // prefix 후로 문자열
+
+        val command = Registry.getCommandByName(allArgs[0])
+        val args = allArgs.drop(1)
+
+        command?.execute(args, event)
     }
 }
