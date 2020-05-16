@@ -1,5 +1,6 @@
 package me.shinco
 
+import me.shinco.managers.AudioManager
 import me.shinco.commands.Registry
 import me.shinco.managers.EventManager
 import net.dv8tion.jda.core.AccountType
@@ -13,6 +14,7 @@ fun main(args: Array<String>) {
     val token = args[0]             // Bot Token 얻기
 
     Registry().loadCommands()       // 명령어 활성화
+    AudioManager()                  // PlayerManager 객체화
     connect(token)                  // 봇 연결
 }
 
